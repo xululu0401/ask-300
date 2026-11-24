@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>问了三百次</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; background: #eef1f3; color: #1f2a33; line-height: 1.6; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 20px 14px 40px; }
+  h1 { font-size: 26px; letter-spacing: 1px; }
+  .lead { color: #56636e; font-size: 14px; margin: 4px 0 14px; }
+  .card { background: #fff; border-radius: 10px; padding: 14px; border: 1px solid #d8dee3; margin-bottom: 14px; min-width: 0; }
+  .card h2 { font-size: 15px; font-weight: 600; margin-bottom: 8px; overflow-wrap: anywhere; }
+  label { font-size: 12px; color: #5d6a75; display: block; overflow-wrap: anywhere; }
+  input, textarea { font: inherit; font-size: 14px; padding: 6px 8px; border: 1px solid #b9c3cb; border-radius: 6px; width: 100%; min-width: 0; background: #fff; font-variant-numeric: tabular-nums; }
+  textarea { resize: vertical; min-height: 96px; line-height: 1.55; font-family: ui-monospace, Menlo, "PingFang SC", monospace; }
+  .g3 { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 2fr) minmax(0, 1fr); gap: 8px; }
+  .row { margin-top: 10px; }
+  .bad { border-color: #b3412f !important; background: #fff0ec !important; }
+  button { font: inherit; font-size: 13px; padding: 6px 11px; border-radius: 6px; border: 1px solid #1f5470; background: #1f5470; color: #fff; cursor: pointer; }
+  button.ghost { background: #fff; color: #1f5470; }
+  .presets, .dl { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .err { display: none; background: #fff0ec; border: 1px solid #ecb7aa; color: #8e2b1c; border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; overflow-wrap: anywhere; }
+  .muted { color: #6f7b85; font-size: 12px; }
+  /* 报告单 */
+  .report { border-top: 6px solid #1f5470; }
+  .rhead { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 12px; color: #6f7b85; border-bottom: 1px dashed #c9d1d7; padding-bottom: 6px; margin-bottom: 10px; }
+  .verdict { display: flex; gap: 12px; align-items: flex-start; }
+  .stamp { flex: none; border: 3px solid #1f5470; color: #1f5470; border-radius: 8px; padding: 4px 10px; font-weight: 800; font-size: 18px; transform: rotate(-4deg); white-space: nowrap; }
+  .stamp.on { border-color: #b3412f; color: #b3412f; }
+  #summary { font-size: 18px; font-weight: 700; overflow-wrap: anywhere; min-width: 0; }
+  #facts { margin: 10px 0 0 18px; font-size: 14px; } #facts li { margin: 3px 0; overflow-wrap: anywhere; }
+  table.items { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; table-layout: fixed; }
+  .items th, .items td { padding: 3px 6px; border-bottom: 1px solid #eef1f3; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .items th { font-size: 12px; color: #5d6a75; font-weight: 600; }
+  .items col.v { width: 22%; } .items col.n { width: 13%; } .items col.b { width: 45%; } .items col.f { width: 20%; }
+  .items td.n { text-align: right; }
+  .bw { position: relative; height: 14px; background: #f2f4f6; border-radius: 3px; }
+  .bw i { position: absolute; left: 0; top: 0; bottom: 0; background: #9fb4c3; border-radius: 3px; }
+  .bw b { position: absolute; top: -3px; bottom: -3px; width: 2px; background: #1f2a33; }
+  tr.high .bw i { background: #c8553d; } tr.low .bw i { background: #6a8fb0; }
+  tr.high td.f { color: #b3412f; font-weight: 700; } tr.low td.f { color: #2f5f8a; font-weight: 700; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: #56636e; margin-top: 8px; }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 4px; }
+  .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+  .pick { font-size: 14px; } .pick div { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px dashed #d8dee3; } .pick div span:first-child { min-width: 0; overflow-wrap: anywhere; } .pick b { white-space: nowrap; }
+  #curve div { display: grid; grid-template-columns: 124px minmax(0, 1fr) 70px; gap: 8px; align-items: center; font-size: 13px; margin: 4px 0; font-variant-numeric: tabular-nums; }
+  #curve .pb { height: 12px; background: #f2f4f6; border-radius: 3px; position: relative; } #curve .pb i { position: absolute; left: 0; top: 0; bottom: 0; background: #1f5470; border-radius: 3px; }
+  #curve .now { font-weight: 700; }
+  #sugs { display: grid; gap: 8px; }
+  .sug { display: flex; gap: 10px; align-items: center; justify-content: space-between; border: 1px solid #d8dee3; border-radius: 6px; padding: 8px 10px; }
+  .sug span { min-width: 0; overflow-wrap: anywhere; font-size: 14px; } .sug button { flex: none; }
+  .how { font-size: 13px; } .how p { margin: 6px 0; }
+  @media (max-width: 760px) { .two { grid-template-columns: minmax(0, 1fr); } .g3 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .g3 > div:first-child { grid-column: 1 / -1; } }
+  @media (max-width: 480px) { .sug { flex-direction: column; align-items: stretch; } #summary { font-size: 16px; } .verdict { flex-direction: column; } .items col.b { width: 38%; } .items col.f { width: 27%; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>问了三百次</h1>
+  <p class="lead">让 AI 在 1 到 30 里随便说一个数、扔骰子、转抽奖转盘，记下一串结果，想知道是不是每个值机会都一样。把可选值和记录贴进来，这里出一张检查单：整体偏没偏、哪几个值偏得明显、「最多的那个」是不是只是被挑出来的巧合、还要再记多少次才看得清。默认例子是虚构的。</p>
+
+  <div class="card">
+    <h2>送检样本</h2>
+    <label for="data">记录：一串结果（空格或逗号隔开），或写成「值:次数」</label>
+    <textarea id="data" maxlength="20000" spellcheck="false"></textarea>
+    <div class="g3 row">
+      <div><label for="values">可选值（范围写 1-30，或逐个写：正 反 / A B C）</label><input id="values" maxlength="400"></div>
+      <div><label for="skip">不算的值（比如规则里不许说的，空着=都算）</label><input id="skip" maxlength="400"></div>
+      <div><label for="alpha">显著性标准</label><input id="alpha" maxlength="8"></div>
+    </div>
+    <div class="presets" id="presets"></div>
+  </div>
+
+  <div class="err" id="error"></div>
+  <div id="out">
+    <div class="card report">
+      <div class="rhead"><span>检查单 · 等概率检验</span><span id="rmeta"></span></div>
+      <div class="verdict"><div class="stamp" id="stamp"></div><div id="summary"></div></div>
+      <ul id="facts"></ul>
+    </div>
+    <div class="card">
+      <h2>逐项指标（黑线 = 平均该出现的次数）</h2>
+      <table class="items" id="items"><colgroup><col class="v"><col class="n"><col class="b"><col class="f"></colgroup><tbody></tbody></table>
+      <div class="legend"><span><i style="background:#c8553d"></i>明显偏多</span><span><i style="background:#6a8fb0"></i>明显偏少</span><span><i style="background:#9fb4c3"></i>在正常起伏里</span><span>按次数从多到少排</span></div>
+    </div>
+    <div class="two">
+      <div class="card">
+        <h2>最多的那个，是不是挑出来的</h2>
+        <div class="pick" id="pick"></div>
+        <p class="muted" style="margin-top:6px">先看了数据再挑最多的，就算每个值机会均等，也总会有一个最多；所以「事后挑」的机会要大得多。</p>
+      </div>
+      <div class="card">
+        <h2>复查：记多少次才看得清</h2>
+        <div id="curve"></div>
+        <p class="muted" id="curveNote" style="margin-top:6px"></p>
+      </div>
+    </div>
+    <div class="card" id="sugCard">
+      <h2>换个查法（点一下代回重算）</h2>
+      <div id="sugs"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>带走结果</h2>
+    <div class="dl">
+      <button id="dlCSV">CSV 逐项</button><button id="dlMD">Markdown 检查单</button><button id="dlPNG">结果卡 PNG</button><button id="dlJSON" class="ghost">JSON 备份</button>
+      <button id="reset" class="ghost">恢复默认</button>
+    </div>
+    <p class="muted" style="margin-top:6px">输入自动保存在这台设备的浏览器里，刷新还在。</p>
+  </div>
+
+  <div class="card how">
+    <h2>怎么算的</h2>
+    <p><b>整体</b>：k 个值、一共 N 次，每个平均该出现 E = N ÷ k 次。卡方 χ² = Σ(实际 − E)² ÷ E，自由度 k − 1，p 是「机会均等时偏成这样或更偏」的概率。平均每个值不到 5 次时卡方近似不准，改用固定种子的模拟算 p，并写明模拟次数。</p>
+    <p><b>逐个值</b>：机会均等时每个值的次数服从二项分布（N 次，每次 1/k）。偏多看「这么多或更多」、偏少看「这么少或更少」，取小的乘 2；因为 k 个值一起看，门槛放严成 标准 ÷ k。</p>
+    <p><b>最多的那个</b>：「事先只盯着它」用二项分布；「事后从 k 个里挑最多的」算的是 N 次随机分到 k 格里、最多那格达到这个次数的概率，逐格精确算（数太大时给上界，并写明）。</p>
+    <p><b>要记多少次</b>：把现在各值的比例当成真的，按非中心卡方算出不同次数下看出偏差的把握，找到 80% 把握需要的次数。现在的比例本身有起伏，这个次数只是估计。</p>
+    <p class="muted">看得出偏只说明「不像每个值机会均等」，不说明为什么偏，也不说明谁作弊；看不出偏也不等于证明了公平。前后几次结果互相有关（比如 AI 对话里记得上一次说了什么）时，这些算法都不适用。默认例子是虚构的。</p>
+  </div>
+</div>
+
+  <script>
+/* 问了三百次 · 计算核心
+ * 输入：可选值（如 1-30、正 反、A B C）、记录（一串结果，或「值:次数」）、不算的值、显著性标准 α。
+ * 1. 每个值出现几次 O，平均该出现 E = N/k 次。
+ * 2. 整体：卡方 χ² = Σ(O−E)²/E，自由度 k−1，p = 上侧尾概率（正则化不完全 Γ）。
+ *    平均每个值不到 5 次时卡方近似不准，改用固定种子的多项分布模拟 p（并照实写明模拟次数）。
+ * 3. 逐个值：每个值的次数 ~ 二项(N, 1/k)。偏多看上侧尾 P(X≥O)、偏少看下侧尾 P(X≤O)，取两者小的 ×2 当双侧机会，
+ *    门槛按 α/k（Bonferroni，k 个值一起看放严），过门槛才标「明显偏多/偏少」。z = (O−E)/√(N·(1/k)·(1−1/k)) 只作展示。
+ * 4. 最多的那个值：事先只盯着它（二项上侧尾） vs 事后从 k 个里挑最多的（多项分布最大格，逐格 DP 精确；太大时用 k×二项尾上界并注明）。
+ * 5. 要多少次：把观测比例当成真实偏差，效应 w² = χ²/N，非中心卡方算把握；找 80% 把握所需的次数。
+ * 不做：判断任何 AI / 赌具 / 抽奖是否作弊；不预测下一次出什么。默认例子是虚构的。 */
+(function (root) {
+  'use strict';
+  function Bad(message, field) { const e = new Error(message); e.field = field; return e; }
+  const KEYS = ['values', 'data', 'skip', 'alpha'];
+  const MAX_K = 200, MAX_N = 100000;
+  const tidy = (s) => String(s).replace(/[，,；;、\t　|]/g, ' ').replace(/：/g, ':').replace(/\s+/g, ' ').trim();
+
+  /* ── 数值工具 ── */
+  const LG = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+  function lnGamma(z) {
+    if (z < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - lnGamma(1 - z);
+    z -= 1; let x = LG[0]; for (let i = 1; i < 9; i++) x += LG[i] / (z + i);
+    const t = z + 7.5; return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+  }
+  /* 正则化上侧不完全 Γ：Q(a,x) */
+  function gammaQ(a, x) {
+    if (x <= 0) return 1;
+    const gln = lnGamma(a);
+    if (x < a + 1) {
+      let ap = a, sum = 1 / a, del = sum;
+      for (let n = 0; n < 100000; n++) { ap++; del *= x / ap; sum += del; if (Math.abs(del) < Math.abs(sum) * 1e-16) break; }
+      return Math.max(0, 1 - sum * Math.exp(-x + a * Math.log(x) - gln));
+    }
+    let b = x + 1 - a, c = 1 / 1e-300, d = 1 / b, h = d;
+    for (let i = 1; i < 100000; i++) {
+      const an = -i * (i - a); b += 2;
+      d = an * d + b; if (Math.abs(d) < 1e-300) d = 1e-300;
+      c = b + an / c; if (Math.abs(c) < 1e-300) c = 1e-300;
+      d = 1 / d; const del = d * c; h *= del; if (Math.abs(del - 1) < 1e-16) break;
+    }
+    return Math.exp(-x + a * Math.log(x) - gln) * h;
+  }
+  const chi2Sf = (x, df) => gammaQ(df / 2, x / 2);
+  /* 标准正态上侧尾 */
+  const normSf = (z) => (z >= 0 ? 0.5 * gammaQ(0.5, z * z / 2) : 1 - 0.5 * gammaQ(0.5, z * z / 2));
+  /* 标准正态分位数（Acklam + 两步牛顿修正） */
+  function invNorm(p) {
+    if (!(p > 0 && p < 1)) throw new Error('invNorm 参数越界');
+    const a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02, 1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
+    const b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02, 6.680131188771972e+01, -1.328068155288572e+01];
+    const c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00, -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00];
+    const d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00, 3.754408661907416e+00];
+    let x;
+    if (p < 0.02425) { const q = Math.sqrt(-2 * Math.log(p)); x = (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+    else if (p > 1 - 0.02425) { const q = Math.sqrt(-2 * Math.log(1 - p)); x = -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+    else { const q = p - 0.5, r = q * q; x = (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1); }
+    for (let i = 0; i < 2; i++) { const e = (1 - normSf(x)) - p; const u = e * Math.sqrt(2 * Math.PI) * Math.exp(x * x / 2); x = x - u / (1 + x * u / 2); }
+    return x;
+  }
+  /* 卡方上侧分位数：chi2Sf(x, df) = alpha */
+  function chi2Inv(alpha, df) {
+    let lo = 0, hi = Math.max(10, df * 4 + 100);
+    while (chi2Sf(hi, df) > alpha) hi *= 2;
+    for (let i = 0; i < 200; i++) { const m = (lo + hi) / 2; if (chi2Sf(m, df) > alpha) lo = m; else hi = m; }
+    return (lo + hi) / 2;
+  }
+  /* 非中心卡方上侧尾：Σ Pois(j; λ/2) · Q((df+2j)/2, x/2)，从众数往两边加 */
+  function ncx2Sf(x, df, lam) {
+    if (lam <= 0) return chi2Sf(x, df);
+    const h = lam / 2, j0 = Math.floor(h);
+    const lw = (j) => -h + j * Math.log(h) - lnGamma(j + 1);
+    let s = 0;
+    for (let j = j0; ; j++) { const w = Math.exp(lw(j)); s += w * chi2Sf(x, df + 2 * j); if (w < 1e-17 && j > j0 + 5) break; if (j > j0 + 100000) break; }
+    for (let j = j0 - 1; j >= 0; j--) { const w = Math.exp(lw(j)); s += w * chi2Sf(x, df + 2 * j); if (w < 1e-17) break; }
+    return Math.min(1, s);
+  }
+  function lnChoose(n, k) { return lnGamma(n + 1) - lnGamma(k + 1) - lnGamma(n - k + 1); }
+  /* 二项上侧尾 P(X ≥ m)，X ~ Bin(n, p) */
+  function binomSf(n, p, m) {
+    if (m <= 0) return 1; if (m > n) return 0;
+    let s = 0; const lp = Math.log(p), lq = Math.log(1 - p);
+    for (let j = m; j <= n; j++) { const t = Math.exp(lnChoose(n, j) + j * lp + (n - j) * lq); s += t; if (j > n * p && t < s * 1e-17) break; }
+    return Math.min(1, s);
+  }
+  /* 二项下侧尾 P(X ≤ m) */
+  function binomCdfDirect(n, p, m) {
+    if (m < 0) return 0; if (m >= n) return 1;
+    let s = 0; const lp = Math.log(p), lq = Math.log(1 - p);
+    for (let j = m; j >= 0; j--) { const t = Math.exp(lnChoose(n, j) + j * lp + (n - j) * lq); s += t; if (j < n * p && t < s * 1e-17) break; }
+    return Math.min(1, s);
+  }
+  /* 多项分布（n 次，k 格等概率）最大格 ≥ m 的概率。精确 DP：逐格分球；太大时返回 k×二项尾上界 */
+  function maxSf(n, k, m) {
+    if (m <= Math.ceil(n / k)) return { p: 1, exact: true };
+    if (m > n) return { p: 0, exact: true };
+    const c = m - 1;
+    if (k * (n + 1) * (c + 1) > 3e7) return { p: Math.min(1, k * binomSf(n, 1 / k, m)), exact: false };
+    const lf = new Float64Array(n + 1); for (let i = 1; i <= n; i++) lf[i] = lf[i - 1] + Math.log(i);
+    let f = new Float64Array(n + 1); f[n] = 1;
+    for (let i = 0; i < k - 1; i++) {
+      const q = 1 / (k - i), lq = Math.log(q), l1 = Math.log(1 - q), g = new Float64Array(n + 1);
+      for (let r = 0; r <= n; r++) {
+        const fr = f[r]; if (!(fr > 1e-320)) continue;
+        const top = Math.min(c, r);
+        for (let j = 0; j <= top; j++) g[r - j] += fr * Math.exp(lf[r] - lf[j] - lf[r - j] + j * lq + (r - j) * l1);
+      }
+      f = g;
+    }
+    let all = 0; for (let r = 0; r <= c; r++) all += f[r];
+    return { p: Math.max(0, Math.min(1, 1 - all)), exact: true };
+  }
+  function mulberry(seed) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  /* 模拟 p：固定种子，n 次等概率抽 k 格，χ² ≥ 观测的比例（含 +1 修正） */
+  function mcP(n, k, chi2, sims) {
+    const R = mulberry(20261124), E = n / k, cnt = new Int32Array(k); let hit = 0;
+    for (let s = 0; s < sims; s++) {
+      cnt.fill(0); for (let i = 0; i < n; i++) cnt[Math.floor(R() * k)]++;
+      let x = 0; for (let j = 0; j < k; j++) { const d = cnt[j] - E; x += d * d / E; }
+      if (x >= chi2 - 1e-9) hit++;
+    }
+    return (hit + 1) / (sims + 1);
+  }
+
+  /* ── 解析 ── */
+  function parseValues(t, field, what) {
+    const toks = tidy(t).split(' ').filter(Boolean), out = [];
+    for (const tk of toks) {
+      const m = /^(\d+)[-~～](\d+)$/.exec(tk);
+      if (m) {
+        const a = +m[1], b = +m[2];
+        if (a >= b) throw Bad(what + '里的范围「' + tk + '」要从小写到大', field);
+        if (b - a + 1 > MAX_K) throw Bad(what + '里的范围「' + tk + '」超过 ' + MAX_K + ' 个值', field);
+        for (let v = a; v <= b; v++) out.push(String(v));
+      } else out.push(tk);
+      if (out.length > MAX_K) throw Bad(what + '最多 ' + MAX_K + ' 个', field);
+    }
+    return out;
+  }
+  function parse(inp) {
+    if (!inp || typeof inp !== 'object') throw Bad('没有输入', 'values');
+    for (const k of KEYS) if (typeof inp[k] !== 'string') throw Bad('缺少输入：' + k, k);
+    const all = parseValues(inp.values, 'values', '可选值');
+    if (all.length < 2) throw Bad('可选值至少要 2 个，例如 1-30 或 正 反', 'values');
+    const seen = {};
+    for (const v of all) { if (seen[v]) throw Bad('可选值「' + v + '」写了两次', 'values'); seen[v] = 1; }
+    const skip = parseValues(inp.skip, 'skip', '不算的值');
+    for (const v of skip) if (!seen[v]) throw Bad('不算的值「' + v + '」不在可选值里', 'skip');
+    const skipSet = {}; skip.forEach((v) => { skipSet[v] = 1; });
+    const values = all.filter((v) => !skipSet[v]);
+    if (values.length < 2) throw Bad('拿掉不算的值以后只剩 ' + values.length + ' 个，至少要 2 个', 'skip');
+    const at = (inp.alpha || '').trim().replace(/%$/, (x) => x);
+    let alpha = /%$/.test(at) ? parseFloat(at) / 100 : parseFloat(at);
+    if (!/^\d*\.?\d+%?$/.test(at) || !(alpha > 0 && alpha <= 0.2)) throw Bad('显著性标准要在 0 到 0.2 之间，例如 0.05', 'alpha');
+    /* 记录 */
+    const d = tidy(inp.data);
+    if (!d) throw Bad('记录是空的：贴一串结果，或写成「值:次数」', 'data');
+    const toks = d.split(' ');
+    const counts = {}; all.forEach((v) => { counts[v] = 0; });
+    const mode = d.indexOf(':') >= 0 ? 'counts' : 'list';
+    const unknown = [];
+    if (mode === 'counts') {
+      const got = {};
+      for (const tk of toks) {
+        const m = /^(.+):(\d+)次?$/.exec(tk);
+        if (!m) throw Bad('「' + tk + '」要写成 值:次数，例如 17:44（次数是 0 或正整数）', 'data');
+        if (got[m[1]]) throw Bad('「' + m[1] + '」的次数写了两次', 'data');
+        got[m[1]] = 1;
+        if (!(m[1] in counts)) { unknown.push(m[1]); continue; }
+        counts[m[1]] += +m[2];
+      }
+    } else {
+      for (const tk of toks) { if (!(tk in counts)) unknown.push(tk); else counts[tk]++; }
+    }
+    if (unknown.length) { const u = [...new Set(unknown)]; throw Bad('记录里有不在可选值里的：' + u.slice(0, 6).map((x) => '「' + x + '」').join('') + (u.length > 6 ? ' 等 ' + u.length + ' 个' : ''), 'data'); }
+    const O = values.map((v) => counts[v]);
+    const N = O.reduce((a, b) => a + b, 0);
+    const dropped = skip.reduce((a, v) => a + counts[v], 0);
+    if (N === 0) throw Bad('拿掉不算的值以后一次记录也没有', dropped ? 'skip' : 'data');
+    if (N > MAX_N) throw Bad('记录最多 ' + MAX_N + ' 次', 'data');
+    return { values, O, N, alpha, skip, dropped, mode, kAll: all.length };
+  }
+
+  const fmt = (x, n) => { const s = x.toFixed(n); return s.indexOf('.') >= 0 ? s.replace(/\.?0+$/, '') : s; };
+  const pTxt = (p) => (p < 0.0001 ? '< 0.0001' : '= ' + fmt(p, 4));
+  const pBare = (p) => (p < 0.0001 ? '< 0.0001' : fmt(p, 4));
+  const chanceTxt = (p) => (p < 0.0001 ? '不到万分之一' : '约 ' + fmt(p * 100, 2) + '%');
+  const pctTxt = (p) => (p >= 0.995 ? '超过 99%' : p < 0.01 ? '不到 1%' : '约 ' + Math.round(p * 100) + '%');
+  const intTxt = (v) => String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const q = (v) => '「' + v + '」';
+
+  function needN(w2, df, alpha, target) {
+    if (!(w2 > 1e-12)) return null;
+    const crit = chi2Inv(alpha, df);
+    let lo = 0, hi = 1; while (ncx2Sf(crit, df, hi) < target) hi *= 2;
+    for (let i = 0; i < 100; i++) { const m = (lo + hi) / 2; if (ncx2Sf(crit, df, m) < target) lo = m; else hi = m; }
+    const lam = hi;
+    if (lam / w2 > 1e8) return null;
+    let n = Math.max(1, Math.ceil(lam / w2 - 1e-9));
+    while (n > 1 && ncx2Sf(crit, df, (n - 1) * w2) >= target) n--;
+    while (ncx2Sf(crit, df, n * w2) < target) n++;
+    return n;
+  }
+
+  function calculate(inp) {
+    const P = parse(inp);
+    const { values, O, N, alpha } = P, k = values.length, df = k - 1, E = N / k, p0 = 1 / k;
+    const chi2 = O.reduce((s, o) => s + (o - E) * (o - E) / E, 0);
+    const pChi2 = chi2Sf(chi2, df);
+    const small = E < 5;
+    let p = pChi2, pMethod = 'chi2', sims = 0, pMC = null;
+    if (small) { sims = Math.max(1000, Math.min(20000, Math.floor(4e6 / N))); pMC = mcP(N, k, chi2, sims); p = pMC; pMethod = 'mc'; }
+    const sd = Math.sqrt(N * p0 * (1 - p0));
+    const cellAlpha = alpha / k;
+    const cells = values.map((v, i) => {
+      const z = (O[i] - E) / sd, up = binomSf(N, p0, O[i]), dn = binomCdfDirect(N, p0, O[i]);
+      const p2 = Math.min(1, 2 * Math.min(up, dn));
+      return { v, o: O[i], e: E, z, share: O[i] / N, p2, flag: p2 < cellAlpha ? (O[i] > E ? 'high' : 'low') : '' };
+    });
+    let ti = 0; O.forEach((o, i) => { if (o > O[ti]) ti = i; });
+    const tops = values.filter((v, i) => O[i] === O[ti]);
+    const top = { v: values[ti], vs: tops, o: O[ti], ratio: O[ti] / E, pThis: binomSf(N, p0, O[ti]) };
+    const ms = maxSf(N, k, O[ti]); top.pAny = ms.p; top.anyExact = ms.exact;
+    const biased = p < alpha;
+    const w2 = chi2 / N;
+    const crit = chi2Inv(alpha, df);
+    const power = w2 > 0 ? ncx2Sf(crit, df, N * w2) : alpha;
+    const need = needN(w2, df, alpha, 0.8);
+    const curve = [Math.max(2, Math.round(N / 2)), N, N * 2].concat(need && need !== N ? [need] : []).filter((x, i, a) => a.indexOf(x) === i).sort((a, b) => a - b).map((n) => ({ n, power: w2 > 0 ? ncx2Sf(crit, df, n * w2) : alpha }));
+    const high = cells.filter((c) => c.flag === 'high').sort((a, b) => b.z - a.z), low = cells.filter((c) => c.flag === 'low').sort((a, b) => a.z - b.z);
+    const Et = fmt(E, 2);
+    const topName = tops.length > 1 ? tops.map(q).join('') + '并列 ' : q(top.v);
+    let summary;
+    if (biased) summary = intTxt(N) + ' 次里' + topName + '出现 ' + intTxt(top.o) + ' 次，是平均 ' + Et + ' 次的 ' + fmt(top.ratio, 1) + ' 倍；整体 p ' + pTxt(p) + '，按 ' + fmt(alpha, 4) + ' 的标准，不像每个值机会均等。';
+    else summary = intTxt(N) + ' 次里最多的是' + topName + intTxt(top.o) + ' 次（平均 ' + Et + ' 次）；整体 p ' + pTxt(p) + '，按 ' + fmt(alpha, 4) + ' 的标准还看不出偏' + (need ? '。要看出现在这种程度的偏，大约要 ' + intTxt(need) + ' 次。' : w2 > 0 ? '；偏得非常小，记到 1 亿次也未必看得出。' : '；各值次数完全一样。');
+    const facts = [];
+    facts.push('一共 ' + intTxt(N) + ' 次，' + k + ' 个可选值' + (P.skip.length ? '（拿掉了' + P.skip.map(q).join('') + '，少算 ' + P.dropped + ' 次）' : '') + '，每个平均该出现 ' + Et + ' 次。');
+    facts.push('整体偏差 χ² = ' + fmt(chi2, 2) + '（自由度 ' + df + '），' + (pMethod === 'mc' ? '平均每个值不到 5 次，卡方近似不准，改用 ' + intTxt(sims) + ' 次模拟：p ' + pTxt(p) + '（卡方近似 p ' + pTxt(pChi2) + '）。' : 'p ' + pTxt(p) + '。'));
+    if (high.length || low.length) facts.push((high.length ? '明显偏多：' + high.map((c) => q(c.v) + intTxt(c.o) + ' 次').join('、') : '') + (high.length && low.length ? '；' : '') + (low.length ? '明显偏少：' + low.map((c) => q(c.v) + intTxt(c.o) + ' 次').join('、') : '') + '（逐个看时每个值的门槛是 p < ' + fmt(cellAlpha, 5) + '，即 ' + fmt(alpha, 4) + ' ÷ ' + k + '）。');
+    else facts.push('没有哪个值单独偏到过门槛（逐个看时每个值的门槛是 p < ' + fmt(cellAlpha, 5) + '，即 ' + fmt(alpha, 4) + ' ÷ ' + k + '，因为 ' + k + ' 个值一起看要放严）。');
+    facts.push('如果事先就只盯着' + q(top.v) + '，等概率下它出现 ' + intTxt(top.o) + ' 次或更多的机会' + chanceTxt(top.pThis) + '；事后从 ' + k + ' 个值里挑最多的那个，最多的达到 ' + intTxt(top.o) + ' 次或更多的机会' + (top.anyExact ? '' : '至多') + chanceTxt(top.pAny).replace(/^约 /, top.anyExact ? '约 ' : ' ') + '。');
+    if (need) facts.push('把现在的比例当真，要有 80% 把握看出来大约要 ' + intTxt(need) + ' 次；现在 ' + intTxt(N) + ' 次的把握' + pctTxt(power) + '。');
+    return { P, N, k, df, E, chi2, pChi2, pMC, p, pMethod, sims, small, cellAlpha, cells, top, biased, w2, power, need, curve, high, low, summary, facts };
+  }
+
+  function suggestions(inp, R) {
+    const out = [];
+    const addSkip = (vs) => Object.assign({}, inp, { skip: tidy(inp.skip ? inp.skip + ' ' + vs.join(' ') : vs.join(' ')) });
+    const verdict = (X) => (X.biased ? '仍不像均等' : '看不出偏');
+    if (R.k >= 3) {
+      const apply = addSkip([R.top.v]);
+      try { const R2 = calculate(apply); out.push({ id: 'dropTop', text: '把' + q(R.top.v) + '拿掉，剩下 ' + R2.k + ' 个值再查：p ' + pBare(R.p) + ' → ' + pBare(R2.p) + '（' + verdict(R2) + '）', apply, R2 }); } catch (e) { /* 拿掉后不可算就不给 */ }
+    }
+    const hv = R.high.map((c) => c.v);
+    if (hv.length >= 2 && R.k - hv.length >= 2) {
+      const apply = addSkip(hv);
+      try { const R2 = calculate(apply); out.push({ id: 'dropHigh', text: '把明显偏多的' + hv.map(q).join('') + '都拿掉再查：p ' + pTxt(R2.p) + '（' + verdict(R2) + '）', apply, R2 }); } catch (e) { /* 同上 */ }
+    }
+    const na = Math.abs(R.P.alpha - 0.01) < 1e-12 ? '0.05' : '0.01';
+    {
+      const apply = Object.assign({}, inp, { alpha: na });
+      try {
+        const R2 = calculate(apply);
+        out.push({ id: 'alpha', text: '改用 ' + na + ' 的标准：' + verdict(R2) + (R.need && R2.need ? '，80% 把握要 ' + intTxt(R.need) + ' → ' + intTxt(R2.need) + ' 次' : ''), apply, R2 });
+      } catch (e) { /* 同上 */ }
+    }
+    return out;
+  }
+
+  function csvEsc(s) { s = String(s); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+  const flagTxt = (f) => (f === 'high' ? '明显偏多' : f === 'low' ? '明显偏少' : '');
+  function toCSV(R, stamp) {
+    const L = ['问了三百次 生成时间 ' + stamp + ' 共 ' + R.N + ' 次 χ²=' + fmt(R.chi2, 4) + ' p=' + R.p];
+    L.push(['值', '出现次数', '平均该出现', '占比', 'z', '单值双侧p', '判断'].join(','));
+    R.cells.forEach((c) => L.push([c.v, c.o, fmt(c.e, 4), fmt(c.share * 100, 2) + '%', fmt(c.z, 3), c.p2, flagTxt(c.flag)].map(csvEsc).join(',')));
+    return L.join('\n') + '\n';
+  }
+  function toMD(R, stamp, sg) {
+    const L = ['# 问了三百次', '', '生成时间：' + stamp + '　显著性标准 ' + fmt(R.P.alpha, 4), '', '**' + R.summary + '**', ''];
+    R.facts.forEach((f) => L.push('- ' + f));
+    L.push('', '## 每个值', '', '| 值 | 次数 | 平均该出现 | z | 判断 |', '|---|---|---|---|---|');
+    R.cells.forEach((c) => L.push('| ' + c.v + ' | ' + c.o + ' | ' + fmt(c.e, 2) + ' | ' + fmt(c.z, 2) + ' | ' + flagTxt(c.flag) + ' |'));
+    L.push('', '## 次数与把握（把现在的比例当真）', '');
+    R.curve.forEach((x) => L.push('- ' + intTxt(x.n) + ' 次：把握' + pctTxt(x.power)));
+    if (sg && sg.length) { L.push('', '## 改一个条件', ''); sg.forEach((s) => L.push('- ' + s.text)); }
+    L.push('', '看得出偏只说明「不像每个值机会均等」，不说明为什么偏，也不说明有人作弊；看不出偏也不等于证明了公平。默认例子是虚构的。');
+    return L.join('\n') + '\n';
+  }
+
+  const DEFAULT = {
+    values: '1-30',
+    data: '17:44 7:26 23:22 3:19 27:19 13:15 21:14 12:12 19:12 11:10\n14:10 24:10 9:8 18:8 22:8 26:8 4:6 8:6 16:6 28:6\n29:6 2:4 5:3 6:3 15:3 25:3 20:3 10:2 1:2 30:2',
+    skip: '', alpha: '0.05',
+  };
+  const PRESETS = [
+    ['默认：问 AI 300 次', DEFAULT],
+    ['骰子扔了 60 次', { values: '1-6', data: '3 6 1 4 2 5 6 2 3 1 4 6 5 2 3 6 1 4 5 2 6 3 1 4 2 5 6 3 1 2 4 6 5 3 2 1 6 4 5 3 2 6 1 4 3 5 2 6 1 4 3 5 6 2 1 4 3 6 5 2', skip: '', alpha: '0.05' }],
+    ['才记了 24 次', { values: '1-6', data: '6 3 6 1 6 5 2 6 4 6 6 3 1 6 2 6 5 6 4 6 3 6 2 6', skip: '', alpha: '0.05' }],
+    ['抛硬币 100 次', { values: '正 反', data: '正:58 反:42', skip: '', alpha: '0.05' }],
+    ['抽奖转盘 8 格', { values: 'A B C D E F G H', data: 'A:31 B:22 C:25 D:19 E:27 F:24 G:12 H:40', skip: '', alpha: '0.05' }],
+  ];
+  const api = { DEFAULT, PRESETS, KEYS, parse, calculate, suggestions, toCSV, toMD, lnGamma, gammaQ, chi2Sf, chi2Inv, normSf, invNorm, ncx2Sf, binomSf, binomCdfDirect, maxSf, mcP, needN, mulberry, fmt, pTxt, pBare, chanceTxt, pctTxt, intTxt, flagTxt, tidy };
+  if (typeof module === 'object' && module.exports) module.exports = api; else root.AppCore = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+  </script>
+  <script>
+/* 问了三百次 · 界面层 */
+(function () {
+  'use strict';
+  const C = window.AppCore;
+  const KEY = 'ask-300:v1';
+  const NAME = '问了三百次';
+  const copy = (o) => JSON.parse(JSON.stringify(o));
+  const DEFAULT = C.DEFAULT, PRESETS = C.PRESETS, KEYS = C.KEYS;
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let state = copy(DEFAULT);
+  let last = null;
+
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* 隐私模式忽略 */ } }
+  function load() {
+    try {
+      const o = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
+      const s = {};
+      for (const k of KEYS) { if (o[k] == null || typeof o[k] === 'object') return null; s[k] = String(o[k]).slice(0, 20000); }
+      return s;
+    } catch (e) { return null; }
+  }
+  function fill() { KEYS.forEach((k) => { $(k).value = state[k]; }); }
+  /* 逐项按次数从多到少，同次数按原顺序 */
+  const sorted = (R) => R.cells.map((c, i) => [c, i]).sort((a, b) => b[0].o - a[0].o || a[1] - b[1]).map((x) => x[0]);
+  const flagWord = (c) => (c.flag === 'high' ? '明显偏多' : c.flag === 'low' ? '明显偏少' : '正常起伏');
+
+  function renderItems(R) {
+    const mx = Math.max(R.top.o, R.E) || 1;
+    $('items').querySelector('tbody').innerHTML = '<tr><th>值</th><th style="text-align:right">次数</th><th>条</th><th>判断</th></tr>' +
+      sorted(R).map((c) => '<tr class="' + c.flag + '" data-v="' + esc(c.v) + '"><td title="' + esc(c.v) + '">' + esc(c.v) + '</td><td class="n">' + c.o + '</td><td><div class="bw"><i style="width:' + (c.o / mx * 100).toFixed(2) + '%"></i><b style="left:calc(' + (R.E / mx * 100).toFixed(2) + '% - 1px)"></b></div></td><td class="f">' + flagWord(c) + '</td></tr>').join('');
+  }
+  function renderPick(R) {
+    const t = R.top;
+    $('pick').innerHTML = '<div><span>最多的' + (t.vs.length > 1 ? '（并列 ' + t.vs.length + ' 个，取第一个）' : '') + '</span><b>「' + esc(t.v) + '」' + C.intTxt(t.o) + ' 次 / 平均 ' + C.fmt(R.E, 2) + '</b></div>' +
+      '<div><span>事先就只盯着它，出现这么多或更多</span><b>' + C.chanceTxt(t.pThis) + '</b></div>' +
+      '<div><span>事后从 ' + R.k + ' 个里挑最多的，最多的达到这么多</span><b>' + (t.anyExact ? '' : '至多') + C.chanceTxt(t.pAny).replace(/^约 /, t.anyExact ? '约 ' : ' ') + '</b></div>';
+  }
+  function renderCurve(R) {
+    $('curve').innerHTML = R.curve.map((x) => '<div class="' + (x.n === R.N ? 'now' : '') + '"><span>' + C.intTxt(x.n) + ' 次' + (x.n === R.N ? '（现在）' : x.n === R.need ? '（80%）' : '') + '</span><span class="pb"><i style="width:' + (x.power * 100).toFixed(1) + '%"></i></span><span>' + C.pctTxt(x.power).replace(/^约 /, '') + '</span></div>').join('');
+    $('curveNote').textContent = R.need ? '把现在的比例当真：到 ' + C.intTxt(R.need) + ' 次时，有 80% 的把握按 ' + C.fmt(R.P.alpha, 4) + ' 的标准看出偏差。这只是估计，现在的比例本身也有起伏。'
+      : R.w2 > 0 ? '偏得非常小，记到 1 亿次也未必看得出。' : '各值次数完全一样，没有可放大的偏差。';
+  }
+  function sugList(sg) {
+    const box = $('sugs'); box.innerHTML = '';
+    sg.forEach((x) => {
+      const d = document.createElement('div'); d.className = 'sug';
+      d.innerHTML = '<span>' + esc(x.text) + '</span>';
+      const bt = document.createElement('button'); bt.textContent = '照这样查'; bt.dataset.sug = x.id;
+      bt.addEventListener('click', () => { state = copy(x.apply); fill(); run(); });
+      d.appendChild(bt); box.appendChild(d);
+    });
+    $('sugCard').style.display = sg.length ? '' : 'none';
+  }
+  function run() {
+    [].forEach.call(document.querySelectorAll('.bad'), (e) => e.classList.remove('bad'));
+    try {
+      const R = C.calculate(state);
+      const sg = C.suggestions(state, R);
+      $('error').style.display = 'none'; $('out').style.display = '';
+      $('stamp').textContent = R.biased ? '不像均等' : '看不出偏';
+      $('stamp').className = 'stamp' + (R.biased ? ' on' : '');
+      $('rmeta').textContent = C.intTxt(R.N) + ' 次 · ' + R.k + ' 个值 · 标准 ' + C.fmt(R.P.alpha, 4);
+      $('summary').textContent = R.summary;
+      $('facts').innerHTML = R.facts.map((f) => '<li>' + esc(f) + '</li>').join('');
+      last = { r: R, sg };
+      renderItems(R); renderPick(R); renderCurve(R); sugList(sg);
+    } catch (e) {
+      last = null;
+      if (e.field) { const el = $(e.field); if (el) el.classList.add('bad'); }
+      $('error').textContent = '查不了：' + e.message; $('error').style.display = 'block';
+      $('out').style.display = 'none';
+    }
+    save();
+  }
+
+  /* ── 导出 ── */
+  function stamp() { const d = new Date(), z = (n) => String(n).padStart(2, '0'); return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + ' ' + z(d.getHours()) + ':' + z(d.getMinutes()); }
+  function download(name, blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }
+  function wrap(g, t, w) {
+    const NOHEAD = '，。、；：！？）」』%·→｜';
+    const out = []; let line = [];
+    const toks = String(t).match(/p\s?[<=]\s?[0-9.]+|[<≥]\s?[0-9][0-9,.%]*|[0-9][0-9,.%–]*(\s?(次|个|倍))?|[A-Za-z_][A-Za-z0-9_.\-/]*|[\s\S]/g) || [];
+    const width = (a) => g.measureText(a.join('')).width;
+    for (const tk of toks) {
+      if (line.length && width(line.concat([tk])) > w) {
+        let carry = [tk];
+        while (line.length > 1 && (NOHEAD.indexOf(carry[0][0]) >= 0 || '（「『'.indexOf(line[line.length - 1]) >= 0)) carry.unshift(line.pop());
+        out.push(line.join(''));
+        line = carry; if (/^\s+$/.test(line[0])) line.shift();
+      } else line.push(tk);
+    }
+    if (line.length) out.push(line.join('')); return out;
+  }
+  function fitText(g, t, w) { let s = String(t); if (g.measureText(s).width <= w) return s; while (s.length > 1 && g.measureText(s + '…').width > w) s = s.slice(0, -1); return s + '…'; }
+  function drawPNG(Lx) {
+    const R = Lx.r;
+    const Wd = 1080, H = 1350, X = 64, TW = 952;
+    const cv = document.createElement('canvas'); cv.width = Wd; cv.height = H;
+    const g = cv.getContext('2d'), FF = '"PingFang SC","Microsoft YaHei",sans-serif';
+    g.fillStyle = '#eef1f3'; g.fillRect(0, 0, Wd, H);
+    g.fillStyle = '#ffffff'; g.fillRect(32, 32, Wd - 64, H - 64);
+    g.fillStyle = '#1f5470'; g.fillRect(32, 32, Wd - 64, 10);
+    g.fillStyle = '#6f7b85'; g.font = '24px ' + FF;
+    g.fillText(fitText(g, NAME + ' · 检查单 · ' + C.intTxt(R.N) + ' 次 · ' + R.k + ' 个值 · 标准 ' + C.fmt(R.P.alpha, 4), TW - 190), X, 96);
+    /* 印章 */
+    g.save(); g.translate(X + TW - 104, 90); g.rotate(-0.07);
+    g.strokeStyle = g.fillStyle = R.biased ? '#b3412f' : '#1f5470'; g.lineWidth = 4; g.strokeRect(-90, -30, 180, 52);
+    g.font = 'bold 28px ' + FF; g.textAlign = 'center'; g.fillText(R.biased ? '不像均等' : '看不出偏', 0, 6); g.restore();
+    g.fillStyle = '#1f2a33'; g.font = 'bold 30px ' + FF;
+    let y = 160, lh = 42, sl = wrap(g, R.summary, TW);
+    if (sl.length > 4) { g.font = 'bold 24px ' + FF; lh = 34; sl = wrap(g, R.summary, TW); }
+    if (sl.length > 5) { sl = sl.slice(0, 5); sl[4] = fitText(g, sl[4] + '……', TW - 10); if (!/…$/.test(sl[4])) sl[4] += '…'; }
+    sl.forEach((l) => { g.fillText(l, X, y); y += lh; });
+    y += 8;
+    /* 柱状：按原顺序，每个值一根柱，黑线 = 平均 */
+    const n = R.k, ch = 300, gw = TW, bw = gw / n, mx = Math.max(R.top.o, R.E) || 1;
+    const base = y + ch;
+    R.cells.forEach((c, i) => {
+      const hh = Math.max(c.o > 0 ? 2 : 0, Math.round(c.o / mx * (ch - 30)));
+      g.fillStyle = c.flag === 'high' ? '#c8553d' : c.flag === 'low' ? '#6a8fb0' : '#9fb4c3';
+      g.fillRect(X + i * bw + Math.min(2, bw * 0.15), base - hh, Math.max(1, bw - Math.min(4, bw * 0.3)), hh);
+      if (c.flag === 'high' && bw >= 14) { g.fillStyle = '#b3412f'; g.font = 'bold 15px ' + FF; const t = String(c.o), tw = g.measureText(t).width; g.fillText(t, X + i * bw + bw / 2 - tw / 2, base - hh - 6); }
+    });
+    const ey = base - Math.round(R.E / mx * (ch - 30));
+    g.fillStyle = '#1f2a33'; g.fillRect(X, ey, gw, 2);
+    g.font = '15px ' + FF; { const t = '平均 ' + C.fmt(R.E, 2) + ' 次'; g.fillText(t, X + gw - g.measureText(t).width, ey - 6); }
+    g.fillStyle = '#c9d1d7'; g.fillRect(X, base, gw, 1);
+    /* 横轴标签：放得下就全写，放不下隔几个写一个 */
+    g.font = '14px ' + FF; g.fillStyle = '#56636e';
+    const maxLab = Math.max(...R.cells.map((c) => g.measureText(c.v).width)) + 6;
+    const every = Math.max(1, Math.ceil(maxLab / bw));
+    { let lastEnd = -1e9; R.cells.forEach((c, i) => { if (i % every === 0) { const t = fitText(g, c.v, bw * every - 4), tw = g.measureText(t).width, lx0 = Math.min(X + i * bw + Math.max(0, bw / 2 - tw / 2), X + TW - tw); if (lx0 < lastEnd + 6) return; g.fillText(t, lx0, base + 18); lastEnd = lx0 + tw; } }); }
+    y = base + 44;
+    if (every > 1) { g.fillStyle = '#6f7b85'; g.font = '14px ' + FF; g.fillText('横轴每 ' + every + ' 个值标一个，完整次数见 CSV', X, y); y += 22; }
+    g.font = '16px ' + FF; let lx = X;
+    [['#c8553d', '明显偏多'], ['#6a8fb0', '明显偏少'], ['#9fb4c3', '正常起伏'], ['#1f2a33', '黑线 = 平均该出现']].forEach(([c, t]) => { g.fillStyle = c; g.fillRect(lx, y + 2, 14, 14); g.fillStyle = '#1f2a33'; g.fillText(t, lx + 20, y + 15); lx += 40 + g.measureText(t).width; });
+    y += 62;
+    /* 复查：几档次数下的把握 */
+    if (R.curve.length && R.w2 > 0) {
+      g.fillStyle = '#1f2a33'; g.font = 'bold 19px ' + FF; g.fillText('记多少次才看得清（把现在的比例当真）', X, y); y += 14;
+      R.curve.forEach((c) => {
+        y += 30; g.font = (c.n === R.N ? 'bold ' : '') + '17px ' + FF; g.fillStyle = '#1f2a33';
+        g.fillText(C.intTxt(c.n) + ' 次' + (c.n === R.N ? '（现在）' : c.n === R.need ? '（80%）' : ''), X, y);
+        g.fillStyle = '#eef1f3'; g.fillRect(X + 190, y - 14, 600, 14);
+        g.fillStyle = '#1f5470'; g.fillRect(X + 190, y - 14, Math.round(600 * c.power), 14);
+        g.fillStyle = '#1f2a33'; g.fillText(C.pctTxt(c.power).replace(/^约 /, ''), X + 810, y);
+      });
+      y += 46;
+    }
+    g.font = '20px ' + FF; g.fillStyle = '#1f2a33';
+    const items = R.facts.slice(1).concat(Lx.sg.map((q) => '换个查法：' + q.text));
+    let shown = 0;
+    for (const f of items) {
+      const ls = wrap(g, '· ' + f, TW);
+      if (y + (ls.length - 1) * 29 > H - 140) break;
+      ls.forEach((l) => { g.fillText(l, X, y); y += 29; }); y += 6; shown++;
+    }
+    if (shown < items.length) { g.fillStyle = '#6f7b85'; g.font = '18px ' + FF; g.fillText('…… 还有 ' + (items.length - shown) + ' 条写不下，见页面或 Markdown 导出', X, Math.min(y, H - 118)); }
+    g.fillStyle = '#6f7b85'; g.font = '18px ' + FF;
+    wrap(g, '看得出偏只说明不像每个值机会均等，不说明为什么偏、谁作弊；看不出偏也不等于证明公平。默认例子是虚构的。', TW).forEach((l, i) => g.fillText(l, X, H - 90 + i * 27));
+    return Promise.resolve(cv);
+  }
+  function backup() {
+    const R = last.r;
+    return { app: NAME, version: 1, savedAt: stamp(), input: copy(state), result: { summary: R.summary, N: R.N, k: R.k, expected: R.E,
+      chi2: R.chi2, df: R.df, p: R.p, pMethod: R.pMethod, simulations: R.sims, pChi2: R.pChi2, biased: R.biased, cellAlpha: R.cellAlpha,
+      cells: R.cells.map((c) => ({ value: c.v, count: c.o, z: c.z, p2: c.p2, flag: c.flag })),
+      top: { value: R.top.v, tied: R.top.vs, count: R.top.o, pThisOnly: R.top.pThis, pMaxOfK: R.top.pAny, pMaxExact: R.top.anyExact },
+      power: R.power, need80: R.need, curve: R.curve } };
+  }
+  function init() {
+    KEYS.forEach((k) => $(k).addEventListener('input', () => { state[k] = $(k).value; run(); }));
+    PRESETS.forEach((p) => {
+      const b = document.createElement('button'); b.className = 'ghost'; b.textContent = p[0];
+      b.addEventListener('click', () => { state = copy(p[1]); fill(); run(); });
+      $('presets').appendChild(b);
+    });
+    $('reset').addEventListener('click', () => { state = copy(DEFAULT); fill(); run(); });
+    $('dlCSV').addEventListener('click', () => { if (last) download(NAME + '.csv', new Blob(['\ufeff' + C.toCSV(last.r, stamp())], { type: 'text/csv;charset=utf-8' })); });
+    $('dlMD').addEventListener('click', () => { if (last) download(NAME + '.md', new Blob([C.toMD(last.r, stamp(), last.sg)], { type: 'text/markdown;charset=utf-8' })); });
+    $('dlJSON').addEventListener('click', () => { if (last) download(NAME + '-备份.json', new Blob([JSON.stringify(backup(), null, 2)], { type: 'application/json' })); });
+    $('dlPNG').addEventListener('click', () => { if (last) drawPNG(last).then((cv) => cv.toBlob((b) => download(NAME + '-1080x1350.png', b), 'image/png')); });
+    state = load() || copy(DEFAULT);
+    fill(); run();
+    window.__ex = { last: () => last, state: () => state, presets: PRESETS, DEFAULT, drawPNG, backup, sorted };
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+
+  </script>
+</body>
+</html>
